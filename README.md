@@ -5,6 +5,7 @@ This repository is to download the MARVEL dataset 2016 for the publication "Gund
  Last Update: 09/28/2016
 
  CITATION:
+ 
  If you use MARVEL in your research, please cite:
 	@PROCEEDINGS {MARVEL,
     author       = "Gundogdu E., Solmaz B, Yucesoy V., Koc A.",
@@ -18,7 +19,8 @@ This repository is to download the MARVEL dataset 2016 for the publication "Gund
  (0) Downloading MARVEL dataset:
 	In order to download the MARVEL dataset, 'MARVEL_Download.py' Python script must be run with the appropriate
 	.dat file, i.e. Uncomment the related dat file: 'VesselClassification.dat' for Vessel Classification,
-	'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.	
+	'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.
+	
 	Default values and explanation of the download parameters inside MARVEL_Download.py are:
 		NUMBER_OF_WORKERS = 10 ## Number of threads that will be working in parallel
 		MAX_NUM_OF_FILES_IN_FOLDER = 5000 ## Maximum number of files in a folder
