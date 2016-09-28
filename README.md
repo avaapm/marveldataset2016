@@ -6,13 +6,13 @@ This repository is to download the MARVEL dataset 2016 for the publication "Gund
 
  CITATION:
  
- If you use MARVEL in your research, please cite:
-	@PROCEEDINGS {MARVEL,
-    author       = "Gundogdu E., Solmaz B, Yucesoy V., Koc A.",
-    title        = "Marvel: A Large-Scale Image Dataset for Maritime Vessels",
-    year         = "2016",
-    organization = "Asian Conference on Computer Vision (ACCV)"
-	}
+ 	If you use MARVEL in your research, please cite:
+		@PROCEEDINGS {MARVEL,
+    	author       = "Gundogdu E., Solmaz B, Yucesoy V., Koc A.",
+    	title        = "Marvel: A Large-Scale Image Dataset for Maritime Vessels",
+    	year         = "2016",
+    	organization = "Asian Conference on Computer Vision (ACCV)"
+		}
  
  This document is to explain the use of MARVEL and its metadata and to download it from the web.
  
