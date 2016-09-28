@@ -85,7 +85,7 @@
 	is required, since the indices of this task are given with respect to the 400K IMO training and test sets.
 
  (5) Vessel Recognition
-	The folder with the name Recognition contains 29 classes for the purpose of recognizing individual vessel within their
+	The folder with the name Recognition (please first extract Recognition.zip) contains 29 classes for the purpose of recognizing individual vessel within their
 	corresponding vessel types. This folder contains seperate foldera for different 29 vessel types.
 	Each vessel type folder, e.g. Bulk Carrier, contain five different folds for training and testing. Each .dat file, i.e.
 	trainSplit_X, has the following structure:
