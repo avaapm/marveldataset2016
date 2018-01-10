@@ -14,7 +14,7 @@
  
  (0) Downloading MARVEL dataset:
 	In order to download the MARVEL dataset, 'MARVEL_Download.py' Python script must be run with the appropriate
-	.dat file, i.e. Uncomment the related dat file: 'VesselClassification.dat' for Vessel Classification,
+	.dat file, i.e. Uncomment the related dat file: 'VesselClassificationUpdated.dat' for Vessel Classification,
 	'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.	
 	Default values and explanation of the download parameters inside MARVEL_Download.py are:
 		NUMBER_OF_WORKERS = 10 ## Number of threads that will be working in parallel
@@ -34,7 +34,7 @@
 	
 	
  (1) Vessel Classification:
-	VesselClassification.dat is the corresponding file for vessel classification.
+	VesselClassificationUpdated.dat is the corresponding file for vessel classification.
 	
 	Each line carries the information related to the training and the test images in the following structure:
 		vessel ID, set index, class label, class label name
