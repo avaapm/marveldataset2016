@@ -1,5 +1,5 @@
+from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
-from urllib2 import urlopen
 from PIL import Image
 import traceback
 import threading
@@ -7,11 +7,11 @@ import datetime
 import logging
 import codecs
 import math
-import sys
 import os
 
+
 ##Uncomment the related dat file ('VesselClassification.dat' for Vessel Classification, 'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.)
-FILE_TO_DOWNLOAD_FROM = "VesselClassification.dat"
+FILE_TO_DOWNLOAD_FROM = "VesselClassificationUpdated.dat"
 ##FILE_TO_DOWNLOAD_FROM = "IMOTrainAndTest.dat" 
 
 NUMBER_OF_WORKERS = 10
@@ -22,23 +22,26 @@ ORIGINAL_SIZE = 0 # 1 for yes, 0 for no
 JUST_IMAGE = 1 # 1 for yes, 0 for no
 
 
-photoDetails = ["Photographer:","Title:","Captured:","IMO:","Photo Category:","Description:"]
-vesselIdentification = ["Name:","IMO:","Flag:","MMSI:","Callsign:"]
-technicalData = ["Vessel type:","Gross tonnage:","Summer DWT:","Length:","Beam:","Draught:"]
-additionalInformation = ["Home port:","Class society:","Build year:","Builder (*):","Owner:","Manager:"]
-aisInformation = ["Last known position:","Status:","Speed, course (heading):","Destination:","Last update:","Source:"]
+photoDetails = ["Photographer:", "Title:", "Captured:", "IMO:", "Photo Category:", "Description:"]
+vesselIdentification = ["Name:", "IMO:", "Flag:", "MMSI:", "Callsign:"]
+technicalData = ["Vessel type:", "Gross tonnage:", "Summer DWT:", "Length:", "Beam:", "Draught:"]
+additionalInformation = ["Home port:", "Class society:", "Build year:", "Builder (*):", "Owner:", "Manager:"]
+aisInformation = ["Last known position:", "Status:", "Speed, course (heading):", "Destination:", "Last update:", "Source:"]
 impText = photoDetails + vesselIdentification + technicalData + additionalInformation  
 impText2 = ["Former name(s):"]
 
-sourceLink = "http://www.shipspotting.com/gallery/photo.php?lid="
+sourceLink = "https://www.shipspotting.com/photos/"
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s', )
 logging.debug("Process started at " + str(datetime.datetime.now()))
 
-def save_image(ID,justImage,outFolder):
+
+def save_image(ID, justImage, outFolder):
     url = sourceLink + ID
-    html = urlopen(url,timeout = 300).read()
-    soup = BeautifulSoup(html,"lxml")
+    print(url)
+    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    html = urlopen(req, timeout=300).read()
+    soup = BeautifulSoup(html, "lxml")
 
     images = [img for img in soup.findAll('img')]
     image_links = [each.get('src') for each in images]
@@ -49,29 +52,30 @@ def save_image(ID,justImage,outFolder):
     filename = " "
     for each in image_links:
         if "http" in each and "jpg" in each and "photos/middle" in each:
-            filename=each.split('/')[-1]
-            f = urlopen(each)
-            with open(os.path.join(outFolder,filename), "wb") as local_file:
+            filename = each.split('/')[-1]
+            req = Request(each, headers={'User-Agent': 'Mozilla/5.0'})
+            f = urlopen(req, timeout=300)
+            with open(os.path.join(outFolder, filename), "wb") as local_file:
                 local_file.write(f.read())
             if ORIGINAL_SIZE == 0:
-                img = Image.open(os.path.join(outFolder,filename)).resize((IMAGE_HEIGHT,IMAGE_WIDTH), Image.ANTIALIAS)
-                os.remove(os.path.join(outFolder,filename))
-                out = file(os.path.join(outFolder,filename),"wb")
-                img.save(out,"JPEG")
+                img = Image.open(os.path.join(outFolder, filename)).resize((IMAGE_HEIGHT, IMAGE_WIDTH), Image.ANTIALIAS)
+                os.remove(os.path.join(outFolder, filename))
+                out = open(os.path.join(outFolder, filename), "wb")
+                img.save(out, "JPEG")
             break
         
     if filename != " " and not justImage:
         textFile = filename.split('.')[0]
-        tFile = codecs.open(os.path.join(outFolder,filename)+'.dat','w','utf-8')    
-        for index,each in enumerate(tr_text):
+        tFile = codecs.open(os.path.join(outFolder,filename)+'.dat', 'w', 'utf-8')
+        for index, each in enumerate(tr_text):
             for impT in impText:
                 if impT == each:
                     tFile.write(each + ' ' + tr_text[index+1] + '\n')
                     break
-        for index,each in enumerate(tr_text):
+        for index, each in enumerate(tr_text):
             for impT in impText2:
                 if impT == each:
-                    for ind in range(1,20):
+                    for ind in range(1, 20):
                         if tr_text[index+ind] != "":
                             tFile.write(each + ' ' + tr_text[index+ind] + '\n')
                         else:
@@ -84,22 +88,22 @@ def save_image(ID,justImage,outFolder):
         return 1
 
 
-def worker(content,workerNo):
+def worker(content, workerNo):
     workerIndex = 0
     folderIndex = 0
     folderNo = 1
-    currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
+    currFolder = os.path.join(os.getcwd(), 'W'+str(workerNo)+'_'+str(folderNo))
     if not os.path.exists(currFolder):
         os.mkdir(currFolder)
     for ID in content:
         if folderIndex == MAX_NUM_OF_FILES_IN_FOLDER:
             folderIndex = 0
             folderNo = folderNo + 1
-            currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
+            currFolder = os.path.join(os.getcwd(), 'W'+str(workerNo)+'_'+str(folderNo))
             if not os.path.exists(currFolder):
                 os.mkdir(currFolder)
         try:
-            status = save_image(ID,JUST_IMAGE,currFolder)
+            status = save_image(ID, JUST_IMAGE, currFolder)
             workerIndex = workerIndex + 1
             if status == 1:
                 folderIndex = folderIndex + 1
@@ -121,11 +125,11 @@ for eachDir in dirs:
                 oldID = eachFile.split(".")[0]
                 priorFiles.append(oldID)
 
-downloadFile = codecs.open(FILE_TO_DOWNLOAD_FROM,"r","utf-8")
+downloadFile = codecs.open(FILE_TO_DOWNLOAD_FROM, "r", "utf-8")
 downloadContent = downloadFile.readlines()
 downloadFile.close()
 finalContent = []
-for index,eachLine in enumerate(downloadContent):
+for index, eachLine in enumerate(downloadContent):
     temp = eachLine.split(',')[0]
     if temp not in priorFiles:
         finalContent.append(temp)
@@ -150,7 +154,7 @@ flag = True
 while flag:
     counter = 0
     for eachT in threads:
-        if eachT.isAlive() == False:
+        if eachT.is_alive() == False:
             counter = counter + 1
     if counter == NUMBER_OF_WORKERS:
         flag = False
@@ -170,7 +174,7 @@ for eachDir in dirs:
                 allIDs.append(fID)
 logging.debug(str(datetime.datetime.now()) + " - write to disc ")
 
-FINAL = codecs.open("FINAL.dat","w","utf-8")
+FINAL = codecs.open("FINAL.dat", "w", "utf-8")
 for eachLine in downloadContent:
     tempID = eachLine.split(",")[0]
     try:
