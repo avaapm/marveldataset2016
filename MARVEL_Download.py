@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from urllib2 import urlopen
+from urllib.request import urlopen, Request, build_opener, install_opener
 from PIL import Image
 import traceback
 import threading
@@ -7,7 +7,6 @@ import datetime
 import logging
 import codecs
 import math
-import sys
 import os
 
 ##Uncomment the related dat file ('VesselClassification.dat' for Vessel Classification, 'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.)
@@ -37,7 +36,11 @@ logging.debug("Process started at " + str(datetime.datetime.now()))
 
 def save_image(ID,justImage,outFolder):
     url = sourceLink + ID
-    html = urlopen(url,timeout = 300).read()
+    opener = build_opener()
+    opener.addheaders = [('User-Agent', 'MyApp/1.0')]
+    install_opener(opener)
+    req = Request(url)
+    html = urlopen(req, timeout=300).read()
     soup = BeautifulSoup(html,"lxml")
 
     images = [img for img in soup.findAll('img')]
@@ -56,12 +59,10 @@ def save_image(ID,justImage,outFolder):
             if ORIGINAL_SIZE == 0:
                 img = Image.open(os.path.join(outFolder,filename)).resize((IMAGE_HEIGHT,IMAGE_WIDTH), Image.ANTIALIAS)
                 os.remove(os.path.join(outFolder,filename))
-                out = file(os.path.join(outFolder,filename),"wb")
-                img.save(out,"JPEG")
+                img.save(os.path.join(outFolder,filename))
             break
         
     if filename != " " and not justImage:
-        textFile = filename.split('.')[0]
         tFile = codecs.open(os.path.join(outFolder,filename)+'.dat','w','utf-8')    
         for index,each in enumerate(tr_text):
             for impT in impText:
@@ -150,7 +151,7 @@ flag = True
 while flag:
     counter = 0
     for eachT in threads:
-        if eachT.isAlive() == False:
+        if eachT.is_alive() == False:
             counter = counter + 1
     if counter == NUMBER_OF_WORKERS:
         flag = False
