@@ -9,6 +9,7 @@ import codecs
 import math
 import os
 
+
 ##Uncomment the related dat file ('VesselClassification.dat' for Vessel Classification, 'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.)
 FILE_TO_DOWNLOAD_FROM = "VesselClassification.dat"
 ##FILE_TO_DOWNLOAD_FROM = "IMOTrainAndTest.dat" 
@@ -18,16 +19,7 @@ MAX_NUM_OF_FILES_IN_FOLDER = 5000
 IMAGE_HEIGHT = 256
 IMAGE_WIDTH = 256
 ORIGINAL_SIZE = 0 # 1 for yes, 0 for no
-JUST_IMAGE = 1 # 1 for yes, 0 for no
-
-
-photoDetails = ["Photographer:","Title:","Captured:","IMO:","Photo Category:","Description:"]
-vesselIdentification = ["Name:","IMO:","Flag:","MMSI:","Callsign:"]
-technicalData = ["Vessel type:","Gross tonnage:","Summer DWT:","Length:","Beam:","Draught:"]
-additionalInformation = ["Home port:","Class society:","Build year:","Builder (*):","Owner:","Manager:"]
-aisInformation = ["Last known position:","Status:","Speed, course (heading):","Destination:","Last update:","Source:"]
-impText = photoDetails + vesselIdentification + technicalData + additionalInformation  
-impText2 = ["Former name(s):"]
+JUST_IMAGE = 0 # 1 for yes, 0 for no
 
 sourceLink = "http://www.shipspotting.com/gallery/photo.php?lid="
 
@@ -43,12 +35,11 @@ def save_image(ID,justImage,outFolder):
     html = urlopen(req, timeout=300).read()
     soup = BeautifulSoup(html,"lxml")
 
-    images = [img for img in soup.findAll('img')]
+    images = [img for img in soup.find_all('img')]
     image_links = [each.get('src') for each in images]
-    if not justImage:
-        tags = [tr for tr in soup.findAll('td')]
-        tr_text = [each.getText() for each in tags]
-        
+
+    label = {}
+
     filename = " "
     for each in image_links:
         if "http" in each and "jpg" in each and "photos/middle" in each:
@@ -61,24 +52,19 @@ def save_image(ID,justImage,outFolder):
                 os.remove(os.path.join(outFolder,filename))
                 img.save(os.path.join(outFolder,filename))
             break
-        
+
+    label['filename'] = filename
+    if not justImage:
+        photo_label = [ele.text for ele in soup.find_all('div', {'class': 'summary-photo__card-general__label'})]     
+        for pt in photo_label:
+            key, value = pt.split(': ')
+            label[key] = value
+  
     if filename != " " and not justImage:
-        tFile = codecs.open(os.path.join(outFolder,filename)+'.dat','w','utf-8')    
-        for index,each in enumerate(tr_text):
-            for impT in impText:
-                if impT == each:
-                    tFile.write(each + ' ' + tr_text[index+1] + '\n')
-                    break
-        for index,each in enumerate(tr_text):
-            for impT in impText2:
-                if impT == each:
-                    for ind in range(1,20):
-                        if tr_text[index+ind] != "":
-                            tFile.write(each + ' ' + tr_text[index+ind] + '\n')
-                        else:
-                            break
-                    break
-        tFile.close()
+        with open(os.path.join(outFolder,filename)+'.txt','w') as tFile:   
+            for k,v in label.items():
+                tFile.write(k+':'+v+'\n')
+
     if filename == " ":
         return 0
     else:
@@ -112,76 +98,78 @@ def worker(content,workerNo):
     logging.debug(str(datetime.datetime.now()) + "-------------- DONE ")
     return
 
-priorFiles = []
-dirs = os.listdir(os.getcwd())
-for eachDir in dirs:
-    if 'W' in eachDir:
-        oldFiles = os.listdir(os.path.join(os.getcwd(),eachDir))
-        for eachFile in oldFiles:
-            if ".jpg" in eachFile:
-                oldID = eachFile.split(".")[0]
-                priorFiles.append(oldID)
+def main():
+    priorFiles = []
+    dirs = os.listdir(os.getcwd())
+    for eachDir in dirs:
+        if 'W' in eachDir:
+            oldFiles = os.listdir(os.path.join(os.getcwd(),eachDir))
+            for eachFile in oldFiles:
+                if ".jpg" in eachFile:
+                    oldID = eachFile.split(".")[0]
+                    priorFiles.append(oldID)
 
-downloadFile = codecs.open(FILE_TO_DOWNLOAD_FROM,"r","utf-8")
-downloadContent = downloadFile.readlines()
-downloadFile.close()
-finalContent = []
-for index,eachLine in enumerate(downloadContent):
-    temp = eachLine.split(',')[0]
-    if temp not in priorFiles:
-        finalContent.append(temp)
+    downloadFile = codecs.open(FILE_TO_DOWNLOAD_FROM,"r","utf-8")
+    downloadContent = downloadFile.readlines()
+    downloadFile.close()
+    finalContent = []
+    for index,eachLine in enumerate(downloadContent):
+        temp = eachLine.split(',')[0]
+        if temp not in priorFiles:
+            finalContent.append(temp)
 
-numOfFiles = len(finalContent)
+    numOfFiles = len(finalContent)
 
-numOfFilesPerEachWorker = [int(math.floor(float(numOfFiles)/NUMBER_OF_WORKERS)) for x in range(0,NUMBER_OF_WORKERS-1)]
-numOfFilesPerEachWorker.append(numOfFiles - (NUMBER_OF_WORKERS-1)*int(round(numOfFiles/NUMBER_OF_WORKERS,0)))
+    numOfFilesPerEachWorker = [int(math.floor(float(numOfFiles)/NUMBER_OF_WORKERS)) for x in range(0,NUMBER_OF_WORKERS-1)]
+    numOfFilesPerEachWorker.append(numOfFiles - (NUMBER_OF_WORKERS-1)*int(round(numOfFiles/NUMBER_OF_WORKERS,0)))
 
-logging.debug("There will be %s workers in this download process" % NUMBER_OF_WORKERS)
-logging.debug("%s files will be downloaded" % numOfFiles)
+    logging.debug("There will be %s workers in this download process" % NUMBER_OF_WORKERS)
+    logging.debug("%s files will be downloaded" % numOfFiles)
 
-threads = []
-imageCount = 0
-for i in range(0,NUMBER_OF_WORKERS):
-    t = threading.Thread(name='Worker'+str(i), target=worker, args=(finalContent[imageCount:imageCount + numOfFilesPerEachWorker[i]],i,))
-    imageCount = imageCount + numOfFilesPerEachWorker[i]
-    threads.append(t)
-    t.start()
+    threads = []
+    imageCount = 0
+    for i in range(0,NUMBER_OF_WORKERS):
+        t = threading.Thread(name='Worker'+str(i), target=worker, args=(finalContent[imageCount:imageCount + numOfFilesPerEachWorker[i]],i,))
+        imageCount = imageCount + numOfFilesPerEachWorker[i]
+        threads.append(t)
+        t.start()
 
-flag = True
-while flag:
-    counter = 0
-    for eachT in threads:
-        if eachT.is_alive() == False:
-            counter = counter + 1
-    if counter == NUMBER_OF_WORKERS:
-        flag = False
+    flag = True
+    while flag:
+        counter = 0
+        for eachT in threads:
+            if eachT.is_alive() == False:
+                counter = counter + 1
+        if counter == NUMBER_OF_WORKERS:
+            flag = False
 
-logging.debug(str(datetime.datetime.now()) + " - list all files startes ")
-allPaths = []
-allIDs = []
-dirs = os.listdir(os.getcwd())
-for eachDir in dirs:
-    if 'W' in eachDir:
-        FinalList = os.listdir(os.path.join(os.getcwd(),eachDir))
-        for eachFile in FinalList:
-            if ".jpg" in eachFile:
-                fPath = os.path.join(os.getcwd(),eachDir,eachFile)
-                fID = eachFile.split(".")[0]
-                allPaths.append(fPath)
-                allIDs.append(fID)
-logging.debug(str(datetime.datetime.now()) + " - write to disc ")
+    logging.debug(str(datetime.datetime.now()) + " - list all files startes ")
+    allPaths = []
+    allIDs = []
+    dirs = os.listdir(os.getcwd())
+    for eachDir in dirs:
+        if 'W' in eachDir:
+            FinalList = os.listdir(os.path.join(os.getcwd(),eachDir))
+            for eachFile in FinalList:
+                if ".jpg" in eachFile:
+                    fPath = os.path.join(os.getcwd(),eachDir,eachFile)
+                    fID = eachFile.split(".")[0]
+                    allPaths.append(fPath)
+                    allIDs.append(fID)
+    logging.debug(str(datetime.datetime.now()) + " - write to disc ")
 
-FINAL = codecs.open("FINAL.dat","w","utf-8")
-for eachLine in downloadContent:
-    tempID = eachLine.split(",")[0]
-    try:
-        tempIndex = allIDs.index(tempID)
-        FINAL.write(eachLine[:-1]+","+str(allPaths[tempIndex])+"\n")
-    except:
-        FINAL.write(eachLine[:-1]+","+"-\n")
-FINAL.close()
+    FINAL = codecs.open("FINAL.dat","w","utf-8")
+    for eachLine in downloadContent:
+        tempID = eachLine.split(",")[0]
+        try:
+            tempIndex = allIDs.index(tempID)
+            FINAL.write(eachLine[:-1]+","+str(allPaths[tempIndex])+"\n")
+        except:
+            FINAL.write(eachLine[:-1]+","+"-\n")
+    FINAL.close()
 
-
+if __name__ == '__main__':
+    main()
 
 
 
