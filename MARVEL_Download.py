@@ -8,6 +8,8 @@ import logging
 import codecs
 import math
 import os
+import ssl 
+ssl._create_default_https_context = ssl._create_unverified_context
 
 
 ##Uncomment the related dat file ('VesselClassification.dat' for Vessel Classification, 'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.)
@@ -21,7 +23,8 @@ IMAGE_WIDTH = 256
 ORIGINAL_SIZE = 0 # 1 for yes, 0 for no
 JUST_IMAGE = 0 # 1 for yes, 0 for no
 
-sourceLink = "http://www.shipspotting.com/gallery/photo.php?lid="
+# sourceLink = "http://www.shipspotting.com/gallery/photo.php?lid="
+sourceLink = "http://www.shipspotting.com/photos/"
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s', )
 logging.debug("Process started at " + str(datetime.datetime.now()))
