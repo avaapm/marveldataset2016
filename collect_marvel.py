@@ -9,34 +9,32 @@ import json
 import requests
 import ssl 
 ssl._create_default_https_context = ssl._create_unverified_context
+import pandas as pd
 
-cats_link = 'https://www.shipspotting.com/photos/categories'
+num_imgs = 10000 # max 3444127
 
-headers = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:96.0) Gecko/20100101 Firefox/96.0",
-}
+api_url= 'https://www.shipspotting.com/ssapi/gallery-search'
+headers={'content-type': 'application/json'}
+payload= {"category":"","perPage":12,"page":1}
 
-soup = BeautifulSoup(requests.get(cats_link, headers=headers).text, 'html.parser')
-script = soup.find_all('script')
+df = pd.DataFrame(columns=['id','category','title'])
 
-script_txt = script[1].string[29:-7]
+pages = num_imgs // 12 + 1
 
-json_resp = json.loads(script_txt)
+import numpy as np
+database = np.zeros((num_imgs,3),dtype=object)
 
-cat_dict = {}
-for cat in json_resp['categories']:
-    cat_dict[cat['title']] = cat['cid'] # dictionary with all the categories and their IDs
+cnt = 0
+for payload['page'] in range(1,pages):
+    res=requests.post(api_url,headers=headers,json=payload, timeout=300)
+    for item in res.json()['items']:
+        database[cnt,0]=item['lid']
+        database[cnt,1]=item['cid']
+        database[cnt,2]=item['title']
+        cnt+=1
+        # line = pd.DataFrame([item['lid'],item['cid'],item['title']], columns=df.columns)
+        # df = pd.concat([line,df], ignore_index=True)
+    print('page:',payload['page'])
 
-cat_page = 'https://www.shipspotting.com/photos/gallery?category='
-
-for cat in cat_dict:
-    cat_link = cat_page + str(cat_dict[cat])
-    headers = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:96.0) Gecko/20100101 Firefox/96.0",
-    "Referer": cat_link
-}
-#https://www.shipspotting.com/ssapi/gallery-search
-    response = requests.get('https://www.shipspotting.com/js/vendors.2772b58b2400e824774d.js', headers=headers)
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    print(cat)
+df = pd.DataFrame(database, columns=['id','category','title'])
+df.to_csv('marvel_database.csv', index=False)
