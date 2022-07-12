@@ -13,15 +13,21 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 ##Uncomment the related dat file ('VesselClassification.dat' for Vessel Classification, 'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.)
-FILE_TO_DOWNLOAD_FROM = "VesselClassification.dat"
+# FILE_TO_DOWNLOAD_FROM = "VesselClassification.dat"
+# FILE_TO_DOWNLOAD_FROM = "accom_test2.csv"
 ##FILE_TO_DOWNLOAD_FROM = "IMOTrainAndTest.dat" 
-
+crop = 20
 NUMBER_OF_WORKERS = 10
 MAX_NUM_OF_FILES_IN_FOLDER = 5000
-IMAGE_HEIGHT = 256
-IMAGE_WIDTH = 256
+IMAGE_HEIGHT = 720
+IMAGE_WIDTH = 1280 + crop
 ORIGINAL_SIZE = 0 # 1 for yes, 0 for no
-JUST_IMAGE = 0 # 1 for yes, 0 for no
+JUST_IMAGE = 1 # 1 for yes, 0 for no
+
+# savedir = '/data1/marvel_ds'
+savedir = '/home/davisac1/marveldataset2016/marvel_ds'
+datadir = '/home/davisac1/marveldataset2016/category_data'
+cats = [os.path.splitext(x)[0] for x in os.listdir(datadir)]
 
 # sourceLink = "http://www.shipspotting.com/gallery/photo.php?lid="
 sourceLink = "http://www.shipspotting.com/photos/"
@@ -45,15 +51,15 @@ def save_image(ID,justImage,outFolder):
 
     filename = " "
     for each in image_links:
-        if "http" in each and "jpg" in each and "photos/middle" in each:
+        if "http" in each and "jpg" in each and "photos/big" in each:
             filename=each.split('/')[-1]
             f = urlopen(each)
             with open(os.path.join(outFolder,filename), "wb") as local_file:
                 local_file.write(f.read())
             if ORIGINAL_SIZE == 0:
-                img = Image.open(os.path.join(outFolder,filename)).resize((IMAGE_HEIGHT,IMAGE_WIDTH), Image.ANTIALIAS)
+                img = Image.open(os.path.join(outFolder,filename)).resize((IMAGE_WIDTH,IMAGE_HEIGHT), Image.ANTIALIAS)
                 os.remove(os.path.join(outFolder,filename))
-                img.save(os.path.join(outFolder,filename))
+                img.crop((0,0,IMAGE_WIDTH,IMAGE_HEIGHT-crop)).save(os.path.join(outFolder,filename))
             break
 
     label['filename'] = filename
@@ -74,22 +80,24 @@ def save_image(ID,justImage,outFolder):
         return 1
 
 
-def worker(content,workerNo):
+def worker(content,workerNo,cat):
     workerIndex = 0
     folderIndex = 0
     folderNo = 1
-    currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
-    if not os.path.exists(currFolder):
-        os.mkdir(currFolder)
+    # currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
+    saveFolder = os.path.join(savedir, cat)
+    if not os.path.exists(saveFolder):
+        os.mkdir(saveFolder)
     for ID in content:
         if folderIndex == MAX_NUM_OF_FILES_IN_FOLDER:
             folderIndex = 0
             folderNo = folderNo + 1
-            currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
-            if not os.path.exists(currFolder):
-                os.mkdir(currFolder)
+            # currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
+            saveFolder = os.path.join(savedir, cat)
+            if not os.path.exists(saveFolder):
+                os.mkdir(saveFolder)
         try:
-            status = save_image(ID,JUST_IMAGE,currFolder)
+            status = save_image(ID,JUST_IMAGE,saveFolder)
             workerIndex = workerIndex + 1
             if status == 1:
                 folderIndex = folderIndex + 1
@@ -101,7 +109,8 @@ def worker(content,workerNo):
     logging.debug(str(datetime.datetime.now()) + "-------------- DONE ")
     return
 
-def main():
+def main(cat):
+    
     priorFiles = []
     dirs = os.listdir(os.getcwd())
     for eachDir in dirs:
@@ -112,7 +121,8 @@ def main():
                     oldID = eachFile.split(".")[0]
                     priorFiles.append(oldID)
 
-    downloadFile = codecs.open(FILE_TO_DOWNLOAD_FROM,"r","utf-8")
+    downloadsource = os.path.join(datadir,cat) + '.csv'
+    downloadFile = codecs.open(downloadsource,"r","utf-8")
     downloadContent = downloadFile.readlines()
     downloadFile.close()
     finalContent = []
@@ -121,7 +131,7 @@ def main():
         if temp not in priorFiles:
             finalContent.append(temp)
 
-    numOfFiles = len(finalContent)
+    numOfFiles = len(finalContent) 
 
     numOfFilesPerEachWorker = [int(math.floor(float(numOfFiles)/NUMBER_OF_WORKERS)) for x in range(0,NUMBER_OF_WORKERS-1)]
     numOfFilesPerEachWorker.append(numOfFiles - (NUMBER_OF_WORKERS-1)*int(round(numOfFiles/NUMBER_OF_WORKERS,0)))
@@ -132,7 +142,7 @@ def main():
     threads = []
     imageCount = 0
     for i in range(0,NUMBER_OF_WORKERS):
-        t = threading.Thread(name='Worker'+str(i), target=worker, args=(finalContent[imageCount:imageCount + numOfFilesPerEachWorker[i]],i,))
+        t = threading.Thread(name='Worker'+str(i), target=worker, args=(finalContent[imageCount:imageCount + numOfFilesPerEachWorker[i]],i,cat))
         imageCount = imageCount + numOfFilesPerEachWorker[i]
         threads.append(t)
         t.start()
@@ -172,7 +182,8 @@ def main():
     FINAL.close()
 
 if __name__ == '__main__':
-    main()
+    for cat in cats:
+        main(cat)
 
 
 

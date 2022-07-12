@@ -1,3 +1,10 @@
+This is an update to the marvel dataset from 2016. It allows you to download ALL of the images from shipspotting.com. Use collect_marvel.py to download the IDs of the ships you would like to download images of. You can specify which categories you want to exclude. The desired boats are saved in csv files in the format ['id','category','title']. The folder of the CSVs (each CSV its own category of ship) is used to download the images with marvel_download.py as the datadir variable. 
+
+Author: Tony Davis
+Updated: 7/12/2022
+
+Original README below:
+
 # marveldataset2016
 This repository is to download the MARVEL dataset 2016 for the publication "Gundogdu E., Solmaz B, Yucesoy V., Koc A., Marvel: A Large-Scale Image Dataset for Maritime Vessels, Asian Conference on Computer Vision (ACCV), 2016".
 

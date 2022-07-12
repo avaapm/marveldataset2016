@@ -7,6 +7,7 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 import pandas as pd
 import numpy as np
+import concurrent.futures
 
 #first obtain a list of all categories
 cats_link = 'https://www.shipspotting.com/photos/categories'
@@ -44,7 +45,8 @@ api_url= 'https://www.shipspotting.com/ssapi/gallery-search'
 postheaders={'content-type': 'application/json'}
 
 #Now collect the IDs for each category
-for cat in cat_dict:
+# for cat in cat_dict:
+def get_ids(cat):
 
     print('Collecting IDs for category: ' + cat)
 
@@ -69,11 +71,12 @@ for cat in cat_dict:
             catdata[cnt,1]=item['cid']
             catdata[cnt,2]=item['title']
             cnt+=1
-        print('page:',payload['page'])
+        if payload['page'] % 10 == 0:
+            print('page:',payload['page'])
 
     df_cat = pd.DataFrame(catdata, columns=['id','category','title'])
-    df_cat.to_csv('category_data/marvel_' + cat + '.csv', index=False)
+    df_cat.to_csv('category_data/' + cat + '.csv', index=False, header=False)
 
-    df_all = pd.concat([df_all,df_cat], ignore_index=True)
-
-df_all.to_csv('marvel_database.csv', index=False)
+executor = concurrent.futures.ProcessPoolExecutor(10)
+futures = [executor.submit(get_ids, cat) for cat in cat_dict]
+concurrent.futures.wait(futures)
