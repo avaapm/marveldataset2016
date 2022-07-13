@@ -26,7 +26,7 @@ JUST_IMAGE = 1 # 1 for yes, 0 for no
 
 # savedir = '/data1/marvel_ds'
 savedir = '/home/davisac1/marveldataset2016/marvel_ds'
-datadir = '/home/davisac1/marveldataset2016/category_data'
+datadir = '/home/davisac1/marveldataset2016/category_data2'
 cats = [os.path.splitext(x)[0] for x in os.listdir(datadir)]
 
 # sourceLink = "http://www.shipspotting.com/gallery/photo.php?lid="
@@ -84,20 +84,27 @@ def worker(content,workerNo,cat):
     workerIndex = 0
     folderIndex = 0
     folderNo = 1
+
     # currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
     saveFolder = os.path.join(savedir, cat)
     if not os.path.exists(saveFolder):
         os.mkdir(saveFolder)
-    for ID in content:
-        if folderIndex == MAX_NUM_OF_FILES_IN_FOLDER:
-            folderIndex = 0
-            folderNo = folderNo + 1
-            # currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
-            saveFolder = os.path.join(savedir, cat)
-            if not os.path.exists(saveFolder):
-                os.mkdir(saveFolder)
+    for boat in content:
+        title = boat[1]
+        ID = boat[0]
+        boatFolder = os.path.join(saveFolder, title)
+        if not os.path.exists(boatFolder):
+            os.mkdir(boatFolder)
+        # if folderIndex == MAX_NUM_OF_FILES_IN_FOLDER:
+        #     folderIndex = 0
+        #     folderNo = folderNo + 1
+        #     # currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
+        #     saveFolder = os.path.join(savedir, cat)
+        #     if not os.path.exists(saveFolder):
+        #         os.mkdir(saveFolder)
         try:
-            status = save_image(ID,JUST_IMAGE,saveFolder)
+
+            status = save_image(ID,JUST_IMAGE,boatFolder)
             workerIndex = workerIndex + 1
             if status == 1:
                 folderIndex = folderIndex + 1
@@ -127,7 +134,7 @@ def main(cat):
     downloadFile.close()
     finalContent = []
     for index,eachLine in enumerate(downloadContent):
-        temp = eachLine.split(',')[0]
+        temp = (eachLine.split(',')[0],eachLine.split(',')[2])
         if temp not in priorFiles:
             finalContent.append(temp)
 
