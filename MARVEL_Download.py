@@ -20,13 +20,13 @@ crop = 20
 NUMBER_OF_WORKERS = 10
 MAX_NUM_OF_FILES_IN_FOLDER = 5000
 IMAGE_HEIGHT = 720
-IMAGE_WIDTH = 1280 + crop
+IMAGE_WIDTH = 1280
 ORIGINAL_SIZE = 0 # 1 for yes, 0 for no
 JUST_IMAGE = 1 # 1 for yes, 0 for no
 
 # savedir = '/data1/marvel_ds'
-savedir = '/home/davisac1/marveldataset2016/marvel_ds'
-datadir = '/home/davisac1/marveldataset2016/category_data2'
+savedir = '/home/davisac1/marvel_ds'
+datadir = '/home/davisac1/marveldataset2016/category_data'
 cats = [os.path.splitext(x)[0] for x in os.listdir(datadir)]
 
 # sourceLink = "http://www.shipspotting.com/gallery/photo.php?lid="
@@ -59,7 +59,8 @@ def save_image(ID,justImage,outFolder):
             if ORIGINAL_SIZE == 0:
                 img = Image.open(os.path.join(outFolder,filename)).resize((IMAGE_WIDTH,IMAGE_HEIGHT), Image.ANTIALIAS)
                 os.remove(os.path.join(outFolder,filename))
-                img.crop((0,0,IMAGE_WIDTH,IMAGE_HEIGHT-crop)).save(os.path.join(outFolder,filename))
+                img = img.crop((0,0,IMAGE_WIDTH,IMAGE_HEIGHT-crop))
+                img.save(os.path.join(outFolder,filename))
             break
 
     label['filename'] = filename
@@ -178,18 +179,19 @@ def main(cat):
                     allIDs.append(fID)
     logging.debug(str(datetime.datetime.now()) + " - write to disc ")
 
-    FINAL = codecs.open("FINAL.dat","w","utf-8")
-    for eachLine in downloadContent:
-        tempID = eachLine.split(",")[0]
-        try:
-            tempIndex = allIDs.index(tempID)
-            FINAL.write(eachLine[:-1]+","+str(allPaths[tempIndex])+"\n")
-        except:
-            FINAL.write(eachLine[:-1]+","+"-\n")
-    FINAL.close()
+    # FINAL = codecs.open("FINAL.dat","w","utf-8")
+    # for eachLine in downloadContent:
+    #     tempID = eachLine.split(",")[0]
+    #     try:
+    #         tempIndex = allIDs.index(tempID)
+    #         FINAL.write(eachLine[:-1]+","+str(allPaths[tempIndex])+"\n")
+    #     except:
+    #         FINAL.write(eachLine[:-1]+","+"-\n")
+    # FINAL.close()
 
 if __name__ == '__main__':
     for cat in cats:
+        print('Begin downloading ' + cat)
         main(cat)
 
 
