@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 
 #use this to see the class balance of the dataset before you download the data
 
@@ -12,11 +13,11 @@ for cat in cats:
     counts[cat] = num
 
 average = sum(counts.values()) / len(counts.values())
-import numpy as np
+
 median = np.median(list(counts.values()))
 total_counts = sum(counts.values())
 num_classes = len(counts.values())
-print(f'The average number of classes is {average}')
+print(f'The average number of images per class is {average}')
 print(f'The median number of classes is {median}')
 print(f'The total number of images is {total_counts}')
 print(f'The number of classes is {num_classes}')
