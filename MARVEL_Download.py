@@ -3,8 +3,8 @@ from urllib.request import urlopen, Request, build_opener, install_opener
 from PIL import Image
 import traceback
 import threading
-# import datetime
-# import logging
+import datetime
+import logging
 import codecs
 import math
 import os
@@ -13,13 +13,14 @@ ssl._create_default_https_context = ssl._create_unverified_context
 # import requests
 import time
 from tqdm import tqdm
+import pandas as pd
 
 ##Uncomment the related dat file ('VesselClassification.dat' for Vessel Classification, 'IMOTrainAndTest.dat' for Vessel Verification/Retrieval/Recognition tasks.)
 # FILE_TO_DOWNLOAD_FROM = "VesselClassification.dat"
 # FILE_TO_DOWNLOAD_FROM = "accom_test2.csv"
 ##FILE_TO_DOWNLOAD_FROM = "IMOTrainAndTest.dat" 
 crop = 20
-NUMBER_OF_WORKERS = 10
+NUMBER_OF_WORKERS = 50
 # MAX_NUM_OF_FILES_IN_FOLDER = 5000
 IMAGE_HEIGHT = 720
 IMAGE_WIDTH = 1280
@@ -83,6 +84,8 @@ def save_image(ID,justImage,outFolder):
                     wait = wait + 1
                     traceback.print_exc()
                     print(f'Trying again after {wait} seconds')
+                    # logging.debug('Trying again after {wait} seconds')
+
                     time.sleep(1)
             with open(os.path.join(outFolder,filename), "wb") as local_file:
                 local_file.write(f.read())
@@ -112,8 +115,8 @@ def save_image(ID,justImage,outFolder):
 
 
 def worker(content,cat):
-    workerIndex = 0
-    folderIndex = 0
+    # workerIndex = 0
+    # folderIndex = 0
     # folderNo = 1
 
     # currFolder = os.path.join(os.getcwd(),'W'+str(workerNo)+'_'+str(folderNo))
@@ -126,6 +129,8 @@ def worker(content,cat):
         boatFolder = os.path.join(saveFolder, title)
         if not os.path.exists(boatFolder):
             os.mkdir(boatFolder)
+        if ID + '.jpg' not in os.listdir(boatFolder):
+            
         # if folderIndex == MAX_NUM_OF_FILES_IN_FOLDER:
         #     folderIndex = 0
         #     folderNo = folderNo + 1
@@ -133,17 +138,17 @@ def worker(content,cat):
         #     saveFolder = os.path.join(savedir, cat)
         #     if not os.path.exists(saveFolder):
         #         os.mkdir(saveFolder)
-        try:
+            try:
 
-            status = save_image(ID,JUST_IMAGE,boatFolder)
-            workerIndex = workerIndex + 1
-            if status == 1:
-                folderIndex = folderIndex + 1
-                # logging.debug(str(ID) + "\t - Downloaded... - " + str(workerIndex) + "\t/" + str(len(content)))
-            # else:
-                # logging.debug(str(ID) + "\t - NO SUCH FILE  - " + str(workerIndex) + "\t/" + str(len(content)))
-        except:
-            traceback.print_exc()
+                status = save_image(ID,JUST_IMAGE,boatFolder)
+                # workerIndex = workerIndex + 1
+                # if status == 1:
+                #     folderIndex = folderIndex + 1
+                    # logging.debug(str(ID) + "\t - Downloaded... - " + str(workerIndex) + "\t/" + str(len(content)))
+                # else:
+                    # logging.debug(str(ID) + "\t - NO SUCH FILE  - " + str(workerIndex) + "\t/" + str(len(content)))
+            except:
+                traceback.print_exc()
     # logging.debug(str(datetime.datetime.now()) + "-------------- DONE ")
     return
 
@@ -187,14 +192,14 @@ def main(cat):
         threads.append(t)
         t.start()
 
-    # flag = True
-    # while flag:
-    #     counter = 0
-    #     for eachT in threads:
-    #         if eachT.is_alive() == False:
-    #             counter = counter + 1
-    #     if counter == NUMBER_OF_WORKERS:
-    #         flag = False
+    flag = True
+    while flag:
+        counter = 0
+        for eachT in threads:
+            if eachT.is_alive() == False:
+                counter = counter + 1
+        if counter == NUMBER_OF_WORKERS:
+            flag = False
 
     # logging.debug(str(datetime.datetime.now()) + " - list all files startes ")
 
@@ -224,12 +229,19 @@ def main(cat):
 
 if __name__ == '__main__':
     for cat in tqdm(cats):
-        if cat in os.listdir(savedir):
-            print(f'{cat} already downloaded')
-            continue
-        print('Begin downloading ' + cat)
-        main(cat)
-
+        cat_dr = os.path.join(savedir,cat)
+        cat_files = sum(len(files) for _, _, files in os.walk(cat_dr))
+        cat_csv= os.path.join(datadir,cat) + '.csv'
+        cat_df = pd.read_csv(cat_csv)
+        if cat_files < len(cat_df) * .95:
+        # if cat in os.listdir(savedir):
+        #     print(f'{cat} already downloaded')
+        #     continue
+            print('Begin downloading ' + cat)
+            # logging.debug('Begin downloading ' + cat)
+            main(cat)
+        else:
+            print('Already downloaded ' + cat)
 
 
 
