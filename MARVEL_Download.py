@@ -20,7 +20,7 @@ import pandas as pd
 # FILE_TO_DOWNLOAD_FROM = "accom_test2.csv"
 ##FILE_TO_DOWNLOAD_FROM = "IMOTrainAndTest.dat" 
 crop = 20
-NUMBER_OF_WORKERS = 50
+NUMBER_OF_WORKERS = 15
 # MAX_NUM_OF_FILES_IN_FOLDER = 5000
 IMAGE_HEIGHT = 720
 IMAGE_WIDTH = 1280
@@ -51,8 +51,8 @@ def save_image(ID,justImage,outFolder):
     req = Request(url)
     # html = requests.get(url, headers=headers).text
     works = False
+    wait = 10
     while not works:
-        wait = 1
         try:
             html = urlopen(req, timeout=300).read()
             works = True
@@ -60,11 +60,9 @@ def save_image(ID,justImage,outFolder):
             traceback.print_exc()
             print(f'Trying again after {wait} seconds')
             time.sleep(wait)
-            wait = wait + 1
+            wait = wait * 1.1
     soup = BeautifulSoup(html,"lxml")
     # soup = BeautifulSoup(html,"html.parser")
-
-
     images = [img for img in soup.find_all('img')]
     image_links = [each.get('src') for each in images]
 
@@ -75,18 +73,16 @@ def save_image(ID,justImage,outFolder):
         if "http" in each and "jpg" in each and "photos/big" in each:
             filename=each.split('/')[-1]
             works = False
-            wait = 1
+            wait = 10
             while not works:
                 try:
                     f = urlopen(each)
                     works = True
                 except:
-                    wait = wait + 1
                     traceback.print_exc()
                     print(f'Trying again after {wait} seconds')
-                    # logging.debug('Trying again after {wait} seconds')
-
-                    time.sleep(1)
+                    time.sleep(wait)
+                    wait = wait * 1.1
             with open(os.path.join(outFolder,filename), "wb") as local_file:
                 local_file.write(f.read())
             if ORIGINAL_SIZE == 0:
