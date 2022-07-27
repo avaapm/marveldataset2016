@@ -29,7 +29,7 @@ JUST_IMAGE = 1 # 1 for yes, 0 for no
 
 # savedir = '/data1/marvel_ds'
 savedir = '/home/davisac1/marvel_ds'
-datadir = '/home/davisac1/marveldataset2016/category_data'
+datadir = '/home/davisac1/marveldataset2016/category_data_trunc'
 cats = [os.path.splitext(x)[0] for x in os.listdir(datadir)]
 
 # sourceLink = "http://www.shipspotting.com/gallery/photo.php?lid="
@@ -86,7 +86,7 @@ def save_image(ID,justImage,outFolder):
             with open(os.path.join(outFolder,filename), "wb") as local_file:
                 local_file.write(f.read())
             if ORIGINAL_SIZE == 0:
-                img = Image.open(os.path.join(outFolder,filename)).resize((IMAGE_WIDTH,IMAGE_HEIGHT+crop), Image.ANTIALIAS)
+                img = Image.open(os.path.join(outFolder,filename)).resize((IMAGE_WIDTH,IMAGE_HEIGHT), Image.ANTIALIAS)
                 os.remove(os.path.join(outFolder,filename))
                 img = img.crop((0,0,IMAGE_WIDTH,IMAGE_HEIGHT-crop))
                 img.save(os.path.join(outFolder,filename))
@@ -229,7 +229,7 @@ if __name__ == '__main__':
         cat_files = sum(len(files) for _, _, files in os.walk(cat_dr))
         cat_csv= os.path.join(datadir,cat) + '.csv'
         cat_df = pd.read_csv(cat_csv)
-        if cat_files < len(cat_df) * .98 or cat_files > 15000:
+        if (cat_files < len(cat_df) * .98):
         # if cat in os.listdir(savedir):
         #     print(f'{cat} already downloaded')
         #     continue

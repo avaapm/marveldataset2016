@@ -11,7 +11,7 @@ for classname in os.listdir(path):
         for file in os.listdir(namepath):
             try:
                 img = Image.open(os.path.join(namepath,file))
-                assert img.size == (1280,720) 
+                assert img.size == (1280,700) 
             except:
                 os.remove(os.path.join(namepath,file))
                 print(f'{os.path.join(namepath,file)} deleted')
